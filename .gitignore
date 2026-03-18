@@ -24,4 +24,4 @@ dist-ssr
 *.sw?
 
 # Exclude documentation folder
-docs/
+# docs/
