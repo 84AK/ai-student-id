@@ -1,8 +1,13 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserPlus, ChevronDown, ChevronUp, Share2, Download, AlertCircle, RefreshCw, Bot } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import download from 'downloadjs';
+
+// ---- 추가 컴포넌트 ----
+import PrivacyModal from './components/PrivacyModal';
+import PrivacyPolicyModal from './components/PrivacyPolicyModal';
+import Footer from './components/Footer';
 
 // ---- SVG 로고 컴포넌트 ----
 const GoogleIcon = ({ className = "w-5 h-5 mr-1.5 shrink-0" }) => (
@@ -73,7 +78,29 @@ function App() {
     const [accountInfo, setAccountInfo] = useState({ id: '', password: '', type: 'Google 계정', avatar: 'boy' });
     const [isCapturing, setIsCapturing] = useState(false);
 
+    // 개인정보 관련 상태
+    const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+    const [isPrivacyPolicyModalOpen, setIsPrivacyPolicyModalOpen] = useState(false);
+
     const cardRef = useRef<HTMLDivElement>(null);
+
+    // 초기 진입 시 LocalStorage 검증
+    useEffect(() => {
+        const hideUntil = localStorage.getItem("hidePrivacyModalUntil");
+        if (!hideUntil || new Date(hideUntil) < new Date()) {
+            setIsPrivacyModalOpen(true);
+        }
+    }, []);
+
+    // '하루 보지 않기' 핸들러
+    const handleToggleDoNotShowToday = (checked: boolean) => {
+        if (checked) {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0); // 자정 만료
+            localStorage.setItem("hidePrivacyModalUntil", tomorrow.toISOString());
+        }
+    };
 
     const mainServices = [
         {
@@ -477,6 +504,26 @@ function App() {
                 </motion.div>
 
             </main>
+
+            {/* 고정 푸터 */}
+            <Footer onOpenPolicy={() => setIsPrivacyPolicyModalOpen(true)} />
+
+            {/* 안내 모달 */}
+            <PrivacyModal 
+                isOpen={isPrivacyModalOpen} 
+                onClose={() => setIsPrivacyModalOpen(false)} 
+                onToggleDoNotShowToday={handleToggleDoNotShowToday}
+                onOpenPolicy={() => {
+                    setIsPrivacyModalOpen(false);
+                    setIsPrivacyPolicyModalOpen(true);
+                }}
+            />
+
+            {/* 상세 방침 모달 */}
+            <PrivacyPolicyModal 
+                isOpen={isPrivacyPolicyModalOpen} 
+                onClose={() => setIsPrivacyPolicyModalOpen(false)} 
+            />
         </div>
     );
 }
